@@ -1,9 +1,9 @@
 import javax.swing.*;
 
-public class Mapa{
+public class Janela{
   public static void main(String[] args) {
 
-    int boardWidth = 713; // Largura do tabuleiro
+    int boardWidth = 736; // Largura do tabuleiro
     int boardHeight = 414; // Altura do tabuleiro
 
     JFrame frame = new JFrame("Flappy Dragon"); // Cria a janela principal
@@ -13,7 +13,6 @@ public class Mapa{
     frame.setResizable(false); // Impede o redimensionamento da janela
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Encerra o jogo por completo 
     //ao sair da janela
-  
   
   }
 }
