@@ -12,25 +12,44 @@ public class FlappyDragon extends JPanel{
     //Imagens
 
     Image backgroundImg;
-    Image DragãoImg1;
-    Image DragãoImg2;
-    Image DragãoImg3;
-    Image DragãoImg4;
+    Image DragonImg;
     Image topPipeImg;
     Image bottomPipeImg;
 
-    
-    //Carregando as imagens
-    FlappyDragon() {
+    //Dragão
+    int DragonX = boardWidth / 8; // Posição inicial do Dragão
+    int DragonY = boardHeight / 2; // Posição inicial do Dragão
+    int DragonWidth = 50; // Largura do Dragão
+    int DragonHeight = 50; // Altura do Dragão
+
+    class Dragon {
+        int x = DragonX;
+        int y = DragonY;
+        int width = DragonWidth;
+        int height = DragonHeight;
+        Image img;
+
+        Dragon(Image img) {
+            this.img = img;
+        }
+    } 
+     
+    // lógica do jogo
+     Dragon dragon;
+
+
+     //Carregando as imagens
+     FlappyDragon() {
         setPreferredSize(new Dimension(boardWidth, boardHeight));     
         backgroundImg = new ImageIcon(getClass(). getResource("./Mapa_3.jpg")).getImage();
-        DragãoImg1 = new ImageIcon(getClass().getResource("./Dragão_voando1.png")).getImage();
-        DragãoImg2 = new ImageIcon(getClass().getResource("./Dragão_voando2.png")).getImage();
-        DragãoImg3 = new ImageIcon(getClass().getResource("./Dragão_voando3.png")).getImage();
-        DragãoImg4 = new ImageIcon(getClass().getResource("./Dragão_voando4.png")).getImage();
+        DragonImg = new ImageIcon(getClass().getResource("./Dragão_voando1.png")).getImage();
         topPipeImg = new ImageIcon(getClass().getResource("./bamboo.png")).getImage();
         bottomPipeImg = new ImageIcon(getClass().getResource("./bamboo.png")).getImage();
+        
+        // Inicializando o Dragão
+        dragon = new Dragon(DragonImg);
     
+
     }
     public void paintComponent(Graphics g) {
         super.paintComponent(g);

@@ -1,7 +1,7 @@
 import javax.swing.*;
 
 public class Janela{
-  public static void main(String[] args) {
+  public static void main(String[] args) throws Exception {
 
     int boardWidth = 736; // Largura do tabuleiro
     int boardHeight = 414; // Altura do tabuleiro
@@ -13,6 +13,11 @@ public class Janela{
     frame.setResizable(false); // Impede o redimensionamento da janela
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Encerra o jogo por completo 
     //ao sair da janela
+
+     FlappyDragon flappyDragon = new FlappyDragon();
+    frame.add(flappyDragon);
+    frame.pack();
+    frame.setVisible(true);
   
   }
 }
