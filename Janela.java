@@ -17,6 +17,7 @@ public class Janela{
      FlappyDragon flappyDragon = new FlappyDragon();
     frame.add(flappyDragon);
     frame.pack();
+    flappyDragon.requestFocus();
     frame.setVisible(true);
   
   }
