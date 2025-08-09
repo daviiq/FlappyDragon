@@ -5,103 +5,116 @@ import java.util.Random;
 import javax.swing.*;
 
 public class FlappyDragon extends JPanel implements ActionListener, KeyListener {
+    // Dimensões da tela do jogo
     int boardWidth = 360;
     int boardHeight = 640;
 
-    // images
-    Image backgroundImg;
-    Image DragonImg;
-    Image topPipeImg;
-    Image bottomPipeImg;
+    // Imagens do jogo
+    Image backgroundImg;             // Fundo do cenário
+    Image[] dragonFrames;            // Frames de animação do dragão
+    Image topPipeImg;                // Cano de cima
+    Image bottomPipeImg;             // Cano de baixo
 
-    // Dragon class
-    int DragonX = boardWidth / 8;
-    int DragonY = boardHeight / 2;
-    int DragonWidth = 34;
-    int DragonHeight = 24;
+    // Posição e tamanho do dragão
+    int dragonX = boardWidth / 6;    // Posição X fixa (ele "não anda" horizontalmente)
+    int dragonY = boardHeight / 2;   // Posição inicial Y
+    int dragonWidth = 48;            // Largura do dragão
+    int dragonHeight = 48;           // Altura do dragão
 
+    // Classe que representa o dragão
     class Dragon {
-        int x = DragonX;
-        int y = DragonY;
-        int width = DragonWidth;
-        int height = DragonHeight;
-        Image img;
-
-        Dragon(Image img) {
-            this.img = img;
-        }
+        int x = dragonX;
+        int y = dragonY;
+        int width = dragonWidth;
+        int height = dragonHeight;
     }
 
-    // pipe class
-    int pipeX = boardWidth;
+    // Propriedades dos canos
+    int pipeX = boardWidth;  // Cano começa à direita da tela
     int pipeY = 0;
-    int pipeWidth = 64; // scaled by 1/6
-    int pipeHeight = 512;
+    int pipeWidth = 64;      // Largura dos canos
+    int pipeHeight = 512;    // Altura dos canos
 
+    // Classe que representa um cano
     class Pipe {
         int x = pipeX;
         int y = pipeY;
         int width = pipeWidth;
         int height = pipeHeight;
         Image img;
-        boolean passed = false;
+        boolean passed = false; // Marca se o dragão já passou por esse cano
 
         Pipe(Image img) {
             this.img = img;
         }
     }
 
-    // game logic
-    Dragon Dragon;
-    int velocityX = -4; // move pipes to the left speed (simulates Dragon moving right)
-    int velocityY = 0; // move Dragon up/down speed.
-    int gravity = 1;
+    // Lógica do jogo
+    Dragon dragon;                   // Instância do dragão
+    int velocityX = -5;              // Velocidade com que os canos andam para a esquerda
+    int velocityY = 0;               // Velocidade vertical do dragão
+    int gravity = 1;                 // Gravidade que puxa o dragão para baixo
 
-    ArrayList<Pipe> pipes;
-    Random random = new Random();
+    ArrayList<Pipe> pipes;           // Lista de canos atuais na tela
+    Random random = new Random();    // Gerador de números aleatórios
 
-    Timer gameLoop;
-    Timer placePipeTimer;
-    boolean gameOver = false;
-    double score = 0;
+    Timer gameLoop;                  // Loop principal do jogo (60 FPS)
+    Timer placePipeTimer;            // Timer para adicionar novos canos periodicamente
+    boolean gameOver = false;        // Flag para saber se o jogo acabou
+    double score = 0;                // Pontuação do jogador
+
+    // Controle da animação do dragão
+    int currentFrame = 0;            // Qual frame está sendo exibido
+    int animationCounter = 0;        // Contador para trocar de frame
+    int animationSpeed = 8;          // A cada 5 ciclos troca de frame
 
     FlappyDragon() {
+        // Configurações básicas do painel do jogo
         setPreferredSize(new Dimension(boardWidth, boardHeight));
-        // setBackground(Color.blue);
         setFocusable(true);
         addKeyListener(this);
 
-        // load images
-        backgroundImg = new ImageIcon(getClass().getResource("./Mapa_3.jpg")).getImage();
-        DragonImg = new ImageIcon(getClass().getResource("./flappyDragon.png")).getImage();
-        topPipeImg = new ImageIcon(getClass().getResource("./bamboo.png")).getImage();
-        bottomPipeImg = new ImageIcon(getClass().getResource("./bamboo.png")).getImage();
+        // Carrega as imagens
+        try {
+            backgroundImg = new ImageIcon(getClass().getResource("./Mapa_3.jpg")).getImage();
+            topPipeImg = new ImageIcon(getClass().getResource("./bamboo.png")).getImage();
+            bottomPipeImg = new ImageIcon(getClass().getResource("./bamboo.png")).getImage();
 
-        // Dragon
-        Dragon = new Dragon(DragonImg);
-        pipes = new ArrayList<Pipe>();
+            // Carrega os 4 frames da animação do dragão
+            dragonFrames = new Image[]{
+                new ImageIcon(getClass().getResource("./dragao1.png")).getImage(),
+                new ImageIcon(getClass().getResource("./dragao2.png")).getImage(),
+                new ImageIcon(getClass().getResource("./dragao3.png")).getImage(),
+                new ImageIcon(getClass().getResource("./dragao4.png")).getImage()
+            };
+        } catch (Exception e) {
+            System.err.println("ERRO: Não foi possível carregar as imagens");
+            e.printStackTrace();
+        }
 
-        // place pipes timer
+        // Cria o dragão e a lista de canos
+        dragon = new Dragon();
+        pipes = new ArrayList<>();
+
+        // Timer que cria novos canos a cada 1.5 segundos
         placePipeTimer = new Timer(1500, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                // Code to be executed
                 placePipes();
             }
         });
         placePipeTimer.start();
 
-        // game timer
-        gameLoop = new Timer(1000 / 60, this); // how long it takes to start timer, milliseconds gone between frames
+        // Loop principal do jogo, rodando a 60 FPS
+        gameLoop = new Timer(1000 / 60, this);
         gameLoop.start();
     }
 
+    // Adiciona um par de canos (superior e inferior)
     void placePipes() {
-        // (0-1) * pipeHeight/2.
-        // 0 -> -128 (pipeHeight/4)
-        // 1 -> -128 - 256 (pipeHeight/4 - pipeHeight/2) = -3/4 pipeHeight
+        // Define a posição vertical aleatória para criar abertura
         int randomPipeY = (int) (pipeY - pipeHeight / 4 - Math.random() * (pipeHeight / 2));
-        int openingSpace = boardHeight / 4;
+        int openingSpace = boardHeight / 4; // Espaço entre os canos
 
         Pipe topPipe = new Pipe(topPipeImg);
         topPipe.y = randomPipeY;
@@ -112,104 +125,139 @@ public class FlappyDragon extends JPanel implements ActionListener, KeyListener 
         pipes.add(bottomPipe);
     }
 
+    // Método padrão do Swing para desenhar na tela
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         draw(g);
     }
 
+    // Desenha todos os elementos do jogo
     public void draw(Graphics g) {
-        // background
-        g.drawImage(backgroundImg, 0, 0, this.boardWidth, this.boardHeight, null);
-
-        // Dragon
-        g.drawImage(DragonImg, Dragon.x, Dragon.y, Dragon.width, Dragon.height, null);
-
-        // pipes
-        for (int i = 0; i < pipes.size(); i++) {
-            Pipe pipe = pipes.get(i);
-            g.drawImage(pipe.img, pipe.x, pipe.y, pipe.width, pipe.height, null);
+        // Desenha o fundo
+        if (backgroundImg != null) {
+            g.drawImage(backgroundImg, 0, 0, this.boardWidth, this.boardHeight, null);
+        } else {
+            g.setColor(new Color(135, 206, 235)); // Cor azul do céu
+            g.fillRect(0, 0, boardWidth, boardHeight);
         }
 
-        // score
-        g.setColor(Color.white);
+        // Desenha o dragão com animação
+        if (dragonFrames != null) {
+            g.drawImage(dragonFrames[currentFrame], dragon.x, dragon.y, dragon.width, dragon.height, null);
+        } else {
+            g.setColor(Color.RED);
+            g.fillOval(dragon.x, dragon.y, dragon.width, dragon.height);
+        }
 
+        // Desenha todos os canos na tela
+        for (Pipe pipe : pipes) {
+            if (pipe.img != null) {
+                g.drawImage(pipe.img, pipe.x, pipe.y, pipe.width, pipe.height, null);
+            } else {
+                g.setColor(Color.GREEN);
+                g.fillRect(pipe.x, pipe.y, pipe.width, pipe.height);
+            }
+        }
+
+        // Desenha a pontuação
+        g.setColor(Color.white);
         g.setFont(new Font("Arial", Font.PLAIN, 32));
         if (gameOver) {
-            g.drawString("Game Over: " + String.valueOf((int) score), 10, 35);
+            g.drawString("Game Over: " + (int) score, 10, 35);
         } else {
             g.drawString(String.valueOf((int) score), 10, 35);
         }
-
     }
 
+    // Atualiza a lógica do jogo a cada frame
     public void move() {
-        // Dragon
+        // Física do dragão: aplica gravidade e move
         velocityY += gravity;
-        Dragon.y += velocityY;
-        Dragon.y = Math.max(Dragon.y, 0); // apply gravity to current Dragon.y, limit the Dragon.y to top of the canvas
+        dragon.y += velocityY;
+        dragon.y = Math.max(dragon.y, 0); // Não deixa sair pela parte de cima
 
-        // pipes
-        for (int i = 0; i < pipes.size(); i++) {
-            Pipe pipe = pipes.get(i);
+        // Animação do dragão: troca o frame periodicamente
+        animationCounter++;
+        if (animationCounter >= animationSpeed) {
+            currentFrame = (currentFrame + 1) % dragonFrames.length;
+            animationCounter = 0;
+        }
+
+        // Movimenta todos os canos para a esquerda
+        for (Pipe pipe : pipes) {
             pipe.x += velocityX;
 
-            if (!pipe.passed && Dragon.x > pipe.x + pipe.width) {
-                score += 0.5; // 0.5 because there are 2 pipes! so 0.5*2 = 1, 1 for each set of pipes
+            // Se o dragão passou pelo cano, soma 0.5 pontos (2 canos = 1 ponto inteiro)
+            if (!pipe.passed && dragon.x > pipe.x + pipe.width) {
+                score += 0.5;
                 pipe.passed = true;
             }
 
-            if (collision(Dragon, pipe)) {
+            // Se colidir com o cano, game over
+            if (collision(dragon, pipe)) {
                 gameOver = true;
             }
         }
 
-        if (Dragon.y > boardHeight) {
+        // Se o dragão cair fora da tela, game over
+        if (dragon.y > boardHeight) {
             gameOver = true;
         }
     }
 
+    // Verifica colisão entre o dragão e um cano
     boolean collision(Dragon a, Pipe b) {
-        return a.x < b.x + b.width && // a's top left corner doesn't reach b's top right corner
-                a.x + a.width > b.x && // a's top right corner passes b's top left corner
-                a.y < b.y + b.height && // a's top left corner doesn't reach b's bottom left corner
-                a.y + a.height > b.y; // a's bottom left corner passes b's top left corner
+        return a.x < b.x + b.width &&
+               a.x + a.width > b.x &&
+               a.y < b.y + b.height &&
+               a.y + a.height > b.y;
     }
 
     @Override
-    public void actionPerformed(ActionEvent e) { // called every x milliseconds by gameLoop timer
-        move();
-        repaint();
+    public void actionPerformed(ActionEvent e) {
+        move();      // Atualiza a lógica
+        repaint();   // Redesenha a tela
         if (gameOver) {
-            placePipeTimer.stop();
-            gameLoop.stop();
+            placePipeTimer.stop(); // Para de gerar novos canos
+            gameLoop.stop();       // Para o loop principal
         }
     }
 
     @Override
     public void keyPressed(KeyEvent e) {
         if (e.getKeyCode() == KeyEvent.VK_SPACE) {
-            // System.out.println("JUMP!");
-            velocityY = -9;
+            velocityY = -9; // Pulo do dragão
 
             if (gameOver) {
-                // restart game by resetting conditions
-                Dragon.y = DragonY;
+                // Reinicia o jogo se apertar espaço após o game over
+                dragon.y = dragonY;
                 velocityY = 0;
                 pipes.clear();
                 gameOver = false;
                 score = 0;
+                currentFrame = 0;
                 gameLoop.start();
                 placePipeTimer.start();
             }
         }
     }
 
-    // not needed
     @Override
-    public void keyTyped(KeyEvent e) {
-    }
+    public void keyTyped(KeyEvent e) {}
 
     @Override
-    public void keyReleased(KeyEvent e) {
+    public void keyReleased(KeyEvent e) {}
+
+    // Método principal para iniciar o jogo
+    public static void main(String[] args) {
+        JFrame frame = new JFrame("Flappy Dragon"); // Janela do jogo
+        FlappyDragon game = new FlappyDragon();      // Cria instância do jogo
+
+        frame.add(game);                             // Adiciona o painel do jogo
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setResizable(false);
+        frame.pack();
+        frame.setVisible(true);
+        frame.setLocationRelativeTo(null);           // Centraliza a janela
     }
 }
